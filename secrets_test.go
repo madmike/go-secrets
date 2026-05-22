@@ -2,6 +2,8 @@ package secrets
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/base64"
 	"errors"
 	"testing"
@@ -21,7 +23,7 @@ func TestLocalKEKEncryptDecrypt(t *testing.T) {
 	kek, err := NewLocalKEK(masterKeyB64)
 	require.NoError(t, err)
 
-	plainDEK := []byte("plaintext-dek-32bytes-long---")
+	plainDEK := []byte("0123456789abcdefghijklmnopqrstuv")
 	require.Len(t, plainDEK, 32)
 
 	// Encrypt
@@ -74,7 +76,7 @@ func TestLocalKEKDecryptWrongKEKID(t *testing.T) {
 	kek, err := NewLocalKEK(masterKeyB64)
 	require.NoError(t, err)
 
-	plainDEK := []byte("plaintext-dek-32bytes-long---")
+	plainDEK := []byte("0123456789abcdefghijklmnopqrstuv")
 	wrapped, _, err := kek.Encrypt(nil, plainDEK)
 	require.NoError(t, err)
 
@@ -95,7 +97,7 @@ func TestLocalKEKDecryptTamperedData(t *testing.T) {
 	kek, err := NewLocalKEK(masterKeyB64)
 	require.NoError(t, err)
 
-	plainDEK := []byte("plaintext-dek-32bytes-long---")
+	plainDEK := []byte("0123456789abcdefghijklmnopqrstuv")
 	wrapped, kekID, err := kek.Encrypt(nil, plainDEK)
 	require.NoError(t, err)
 
@@ -112,7 +114,7 @@ func TestLocalKEKDecryptTamperedData(t *testing.T) {
 
 // TestEncryptWithDEKRoundTrip tests DEK-level encryption round-trip.
 func TestEncryptWithDEKRoundTrip(t *testing.T) {
-	dek := []byte("encryption-key-32bytes-long-!!")
+	dek := []byte("0123456789abcdefghijklmnopqrstuv")
 	plaintext := []byte("my secret data to encrypt")
 
 	ciphertext, nonce, err := encryptWithDEK(dek, plaintext)
@@ -217,7 +219,7 @@ func TestIsVaultRef(t *testing.T) {
 	}{
 		{"vault://db/abc-123", true},
 		{"vault://db/", false}, // empty after prefix
-		{"vault://db", false},   // no trailing /
+		{"vault://db", false},  // no trailing /
 		{"http://db/abc", false},
 		{"", false},
 		{"vault://other/abc", false},
@@ -288,9 +290,3 @@ func TestFactoryUnknownBackend(t *testing.T) {
 	require.Nil(t, vault)
 	require.Contains(t, err.Error(), "unknown secrets backend")
 }
-
-// Needed imports for cipher operations in test
-import (
-	"crypto/aes"
-	"crypto/cipher"
-)
